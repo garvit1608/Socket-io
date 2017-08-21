@@ -30,6 +30,14 @@ io.on('connection', function(socket) {
   socket.on('chat msg', function(msg) {
     io.emit('chat_msg_response', msg);
   });
+
+  socket.on('someone_is_typing', function() {
+    io.emit('someone_is_typing');
+  });
+
+  socket.on('add_user', function(uname) {
+    io.emit('add_user', uname);
+  })
 });
 
 /**

@@ -8,9 +8,30 @@
       form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
       form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
       form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages, #users { list-style-type: none; margin: 0; padding: 0; }
       #messages li { padding: 5px 10px; }
       #messages li:nth-child(odd) { background: #eee; }
+      #progress { display: none; position: absolute; right: 10px; bottom: 50px; }
+      #l-div {
+        max-height:  600px;
+        overflow-y: auto;
+        width: 800px;
+        float: left;
+      }
+      #container {
+        display: none;
+      }
+      .ol-bullet:before {
+        content: '•';
+        font-size: 25px;
+        margin-right: 10px;
+        vertical-align: middle;
+        color: #31d031;
+      }
+      .ol-users {
+        width: 200px;
+        float: right;
+      }
     </style>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
@@ -19,18 +40,23 @@
       var timeOutTimer;
       $(function() {
 
-        // $('#m').keypress(function() {
-        //   var timeLimit = 500;
-        //   if (timeOutTimer) {
-        //     clearsTimeout(timeOutTimer);
-        //   }
-        //   $('#progress').text('someone is typing....');
-        //   timeOutTimer = setTimeout(function() {
-        //     $('#progress').text('');
-        //   }, 500);
-        // });
+        $('#m').keypress(function() {
+          socket.emit('someone_is_typing');
+        });
 
-        $('form').submit(function() {
+        socket.on('someone_is_typing', function() {
+          var timeLimit = 500;
+          if (timeOutTimer) {
+            clearTimeout(timeOutTimer);
+          }
+
+          $('#progress').show()
+          timeOutTimer = setTimeout(function() {
+            $('#progress').hide();
+          }, 500);
+        });
+
+        $('form.chat').submit(function() {
           socket.emit('chat msg', $('#m').val());
           $('#m').val('');
           return false;
@@ -38,17 +64,40 @@
         socket.on('chat_msg_response', function(msg) {
           $('#messages').append($('<li>').text(msg));
         });
+
+
+        $('form.username').submit(function() {
+          socket.emit('add_user', $('#user').val());
+          $(this).hide();
+          $('#container').show();
+          return false;
+        });
+        socket.on('add_user', function(uname) {
+          $('#users').append($('<li class="ol-bullet">').text(uname));
+        })
       });
     </script>
   </head>
   <body>
-    <div style="max-height:  600px; overflow-y: auto;">
-      <ul id="messages"></ul>
+    <div id="container">
+      <div id="l-div">
+        <ul id="messages"></ul>
 
-      <div id="progress"></div>
-      <form action="">
-        <input id="m" autocomplete="off" /><button>Send</button>
-      </form>
+        <div id="progress">
+          <img src="/images/loading.gif">
+        </div>
+        <form action="" class="chat">
+          <input id="m" autocomplete="off" /><button>Send</button>
+        </form>
+      </div>
+      <div class="ol-users">
+        <h3>Online Users</h3>
+        <ul id="users"></ul>
+      </div>
     </div>
+    <form action="" class="username">
+      <input type="text" id="user" autocomplete="off" placeholder="enter username to begin chat">
+      <button>Submit</button>
+    </form>
   </body>
 </html>
